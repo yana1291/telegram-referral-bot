@@ -5,7 +5,7 @@ from aiogram.utils import executor
 from aiogram.dispatcher.filters import CommandStart
 
 TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_USERNAME = "QE126T"  # Имя канала без https://t.me/
+CHANNEL_USERNAME = "QE126T"
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
