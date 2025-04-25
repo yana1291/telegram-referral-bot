@@ -41,10 +41,8 @@ async def start_with_ref(message: types.Message):
     ref_id = message.get_args()
     user_id = message.from_user.id
 
-    await message.answer("""
-Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
-Для начала проверь подписку на канал: https://t.me/QE126T.
-""")
+    await message.answer("""Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
+Для начала проверь подписку на канал: https://t.me/QE126T.""")
 
     member = await bot.get_chat_member(chat_id=f"@{CHANNEL_USERNAME}", user_id=user_id)
     if member.status in ["member", "administrator", "creator"]:
@@ -65,10 +63,8 @@ async def start_with_ref(message: types.Message):
 async def start(message: types.Message):
     user_id = message.from_user.id
 
-    await message.answer("""
-Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
-Для начала проверь подписку на канал: https://t.me/QE126T.
-""")
+    await message.answer("""Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
+Для начала проверь подписку на канал: https://t.me/QE126T.""")
 
     member = await bot.get_chat_member(chat_id=f"@{CHANNEL_USERNAME}", user_id=user_id)
     if member.status in ["member", "administrator", "creator"]:
