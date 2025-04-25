@@ -44,7 +44,7 @@ async def start_with_ref(message: types.Message):
     await message.answer(
         "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
 "
-        "Для начала проверь подписку на канал: https://t.me/QE126T."
+        + "Для начала проверь подписку на канал: https://t.me/QE126T."
     )
 
     member = await bot.get_chat_member(chat_id=f"@{CHANNEL_USERNAME}", user_id=user_id)
@@ -69,7 +69,7 @@ async def start(message: types.Message):
     await message.answer(
         "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
 "
-        "Для начала проверь подписку на канал: https://t.me/QE126T."
+        + "Для начала проверь подписку на канал: https://t.me/QE126T."
     )
 
     member = await bot.get_chat_member(chat_id=f"@{CHANNEL_USERNAME}", user_id=user_id)
