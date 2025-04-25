@@ -5,7 +5,7 @@ from aiogram.utils import executor
 from aiogram.dispatcher.filters import CommandStart
 
 TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_USERNAME = "QE126T"  # Имя канала без https://t.me/
+CHANNEL_USERNAME = "QE126T"  # имя канала без https://t.me/
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
@@ -41,7 +41,6 @@ async def start_with_ref(message: types.Message):
     ref_id = message.get_args()
     user_id = message.from_user.id
 
-    # Приветственное сообщение
     await message.answer(
         "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
 "
@@ -67,7 +66,6 @@ async def start_with_ref(message: types.Message):
 async def start(message: types.Message):
     user_id = message.from_user.id
 
-    # Приветственное сообщение
     await message.answer(
         "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
 "
