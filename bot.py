@@ -5,6 +5,8 @@ from aiogram.utils import executor
 from aiogram.dispatcher.filters import CommandStart
 
 TOKEN = os.getenv("BOT_TOKEN")
+CHANNEL_USERNAME = "QE126T"  # Имя канала без https://t.me/
+
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
@@ -38,31 +40,53 @@ prizes = {
 async def start_with_ref(message: types.Message):
     ref_id = message.get_args()
     user_id = message.from_user.id
-    cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
-    if cursor.fetchone() is None:
-        cursor.execute("INSERT INTO users (user_id, invited_by, balance) VALUES (?, ?, ?)", (user_id, ref_id, 0))
-        cursor.execute("UPDATE users SET balance = balance + 10 WHERE user_id=?", (ref_id,))
-        conn.commit()
-    await message.answer("Добро пожаловать! Вы использовали реферальную ссылку.")
+
+    # Приветственное сообщение
+    await message.answer(
+        "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
+"
+        "Для начала проверь подписку на канал: https://t.me/QE126T."
+    )
+
+    member = await bot.get_chat_member(chat_id=f"@{CHANNEL_USERNAME}", user_id=user_id)
+    if member.status in ["member", "administrator", "creator"]:
+        cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
+        if cursor.fetchone() is None:
+            cursor.execute("INSERT INTO users (user_id, invited_by, balance) VALUES (?, ?, ?)", (user_id, ref_id, 0))
+            cursor.execute("UPDATE users SET balance = balance + 10 WHERE user_id=?", (ref_id,))
+            conn.commit()
+
+        link = f"https://t.me/{(await bot.get_me()).username}?start={user_id}"
+        await message.answer(f"Ваша реферальная ссылка:
+{link}
+Приглашайте друзей и получайте бонусы!")
+    else:
+        await message.answer("Вы не подписаны на канал. Пожалуйста, подпишитесь на https://t.me/QE126T и нажмите /start заново.")
 
 @dp.message_handler(commands=["start"])
 async def start(message: types.Message):
     user_id = message.from_user.id
-    cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
-    if cursor.fetchone() is None:
-        cursor.execute("INSERT INTO users (user_id, balance) VALUES (?, ?)", (user_id, 0))
-        conn.commit()
-    await message.answer("Добро пожаловать!")
 
-@dp.message_handler(commands=["ref"])
-async def ref(message: types.Message):
-    user_id = message.from_user.id
-    link = f"https://t.me/{(await bot.get_me()).username}?start={user_id}"
-    cursor.execute("SELECT COUNT(*) FROM users WHERE invited_by=?", (user_id,))
-    count = cursor.fetchone()[0]
+    # Приветственное сообщение
     await message.answer(
-        f"Ваша реферальная ссылка:\n{link}\nВы пригласили: {count} человек(а)"
+        "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
+"
+        "Для начала проверь подписку на канал: https://t.me/QE126T."
     )
+
+    member = await bot.get_chat_member(chat_id=f"@{CHANNEL_USERNAME}", user_id=user_id)
+    if member.status in ["member", "administrator", "creator"]:
+        cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
+        if cursor.fetchone() is None:
+            cursor.execute("INSERT INTO users (user_id, balance) VALUES (?, ?)", (user_id, 0))
+            conn.commit()
+
+        link = f"https://t.me/{(await bot.get_me()).username}?start={user_id}"
+        await message.answer(f"Ваша реферальная ссылка:
+{link}
+Приглашайте друзей и получайте бонусы!")
+    else:
+        await message.answer("Вы не подписаны на канал. Пожалуйста, подпишитесь на https://t.me/QE126T и нажмите /start заново.")
 
 @dp.message_handler(commands=["balance"])
 async def balance(message: types.Message):
@@ -74,10 +98,13 @@ async def balance(message: types.Message):
 
 @dp.message_handler(commands=["shop"])
 async def shop(message: types.Message):
-    text = "Доступные призы:\n"
+    text = "Доступные призы:
+"
     for pid, prize in prizes.items():
-        text += f"{pid}. {prize['name']} — {prize['cost']} бонусов\n"
-    text += "\nКупить: /buy <номер приза>"
+        text += f"{pid}. {prize['name']} — {prize['cost']} бонусов
+"
+    text += "
+Купить: /buy <номер приза>"
     await message.answer(text)
 
 @dp.message_handler(commands=["buy"])
