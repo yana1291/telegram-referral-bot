@@ -60,9 +60,7 @@ async def ref(message: types.Message):
     link = f"https://t.me/{(await bot.get_me()).username}?start={user_id}"
     cursor.execute("SELECT COUNT(*) FROM users WHERE invited_by=?", (user_id,))
     count = cursor.fetchone()[0]
-    await message.answer(f"Ваша реферальная ссылка:
-{link}
-Вы пригласили: {count} человек(а)")
+    await message.answer(f"Ваша реферальная ссылка:\n{link}\nВы пригласили: {count} человек(а)")
 
 @dp.message_handler(commands=["balance"])
 async def balance(message: types.Message):
@@ -74,13 +72,10 @@ async def balance(message: types.Message):
 
 @dp.message_handler(commands=["shop"])
 async def shop(message: types.Message):
-    text = "Доступные призы:
-"
+    text = "Доступные призы:\n"
     for pid, prize in prizes.items():
-        text += f"{pid}. {prize['name']} — {prize['cost']} бонусов
-"
-    text += "
-Купить: /buy <номер приза>"
+        text += f"{pid}. {prize['name']} — {prize['cost']} бонусов\n"
+    text += "\nКупить: /buy <номер приза>"
     await message.answer(text)
 
 @dp.message_handler(commands=["buy"])
