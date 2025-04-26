@@ -60,7 +60,9 @@ async def start_with_ref(message: types.Message):
 {link}
 Приглашайте друзей и получайте бонусы!")
     else:
-        await message.answer("Вы не подписаны на канал. Пожалуйста, подпишитесь на https://t.me/QE126T и нажмите /start заново.")
+        await message.answer(
+            "Вы не подписаны на канал. Пожалуйста, подпишитесь на https://t.me/QE126T и нажмите /start заново."
+        )
 
 @dp.message_handler(commands=["start"])
 async def start(message: types.Message):
@@ -84,7 +86,9 @@ async def start(message: types.Message):
 {link}
 Приглашайте друзей и получайте бонусы!")
     else:
-        await message.answer("Вы не подписаны на канал. Пожалуйста, подпишитесь на https://t.me/QE126T и нажмите /start заново.")
+        await message.answer(
+            "Вы не подписаны на канал. Пожалуйста, подпишитесь на https://t.me/QE126T и нажмите /start заново."
+        )
 
 @dp.message_handler(commands=["balance"])
 async def balance(message: types.Message):
