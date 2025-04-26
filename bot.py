@@ -23,7 +23,7 @@ conn.commit()
 
 CHANNEL_ID = '@QE126T'  # Сюда вставь свой канал
 
-# Приветствие
+# Старт с реферальной ссылкой
 @dp.message_handler(CommandStart(deep_link=True))
 async def start_with_ref(message: types.Message):
     ref_id = message.get_args()
@@ -35,7 +35,7 @@ async def start_with_ref(message: types.Message):
         markup.add(InlineKeyboardButton("✅ Подписался", callback_data=f"checksub:{ref_id}"))
         await message.answer(
             "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!\n\n"
-            "Для начала проверь подписку на канал: https://t.me/QE126T",
+            "Для начала подпишитесь на канал: https://t.me/QE126T",
             reply_markup=markup
         )
     else:
@@ -48,10 +48,10 @@ async def start(message: types.Message):
     cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
     if cursor.fetchone() is None:
         markup = InlineKeyboardMarkup()
-        markup.add(InlineKeyboardButton("✅ Подписался", callback_data=f"checksub:0"))
+        markup.add(InlineKeyboardButton("✅ Подписался", callback_data="checksub:0"))
         await message.answer(
             "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!\n\n"
-            "Для начала проверь подписку на канал: https://t.me/QE126T",
+            "Для начала подпишитесь на канал: https://t.me/QE126T",
             reply_markup=markup
         )
     else:
@@ -72,12 +72,23 @@ async def check_subscription(callback_query: types.CallbackQuery):
             if ref_id != 0:
                 cursor.execute("UPDATE users SET balance = balance + 10 WHERE user_id=?", (ref_id,))
                 conn.commit()
-                await bot.send_message(ref_id, "Поздравляем! Новый пользователь зарегистрировался по вашей ссылке!\n"
-                                               "Сделайте скриншот этого сообщения и отправьте его в канал @QE126T для получения 0.5 голды!")
+                await bot.send_message(ref_id,
+                    "Поздравляем! Новый пользователь зарегистрировался по вашей реферальной ссылке!\n"
+                    "Сделайте скриншот этого сообщения и отправьте его в канал @QE126T чтобы получить 0.5 голды!"
+                )
 
-        await bot.send_message(user_id, "Подписка подтверждена! Теперь вы можете приглашать друзей.")
+        bot_user = await bot.get_me()
+        link = f"https://t.me/{bot_user.username}?start={user_id}"
+        await bot.send_message(user_id,
+            f"Вы успешно подписались!
+"
+            f"Ваша реферальная ссылка:
+{link}
+"
+            f"Приглашайте друзей и получайте бонусы!"
+        )
     else:
-        await bot.send_message(user_id, "❗ Вы не подписаны на канал!")
+        await bot.send_message(user_id, "❗ Вы не подписаны на канал! Пожалуйста, подпишитесь.")
 
 if __name__ == "__main__":
     executor.start_polling(dp)
