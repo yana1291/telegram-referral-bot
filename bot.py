@@ -3,6 +3,7 @@ import sqlite3
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 from aiogram.dispatcher.filters import CommandStart
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN)
@@ -34,6 +35,11 @@ prizes = {
     3: {"name": "Промокод на скидку", "cost": 15, "message": "Ваш промокод: PROMO15"}
 }
 
+# Кнопка "Подписался"
+subscribe_markup = InlineKeyboardMarkup().add(
+    InlineKeyboardButton("✅ Подписался", callback_data="subscribed")
+)
+
 @dp.message_handler(CommandStart(deep_link=True))
 async def start_with_ref(message: types.Message):
     ref_id = message.get_args()
@@ -44,12 +50,9 @@ async def start_with_ref(message: types.Message):
         cursor.execute("UPDATE users SET balance = balance + 10 WHERE user_id=?", (ref_id,))
         conn.commit()
     await message.answer(
-        "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
-"
-        "Для начала проверь подписку на канал: https://t.me/QE126T
-
-"
-        "После подписки нажми на кнопку ниже."
+        """Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
+Для начала проверь подписку на канал: https://t.me/QE126T""",
+        reply_markup=subscribe_markup
     )
 
 @dp.message_handler(commands=["start"])
@@ -60,25 +63,23 @@ async def start(message: types.Message):
         cursor.execute("INSERT INTO users (user_id, balance) VALUES (?, ?)", (user_id, 0))
         conn.commit()
     await message.answer(
-        "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
-"
-        "Для начала проверь подписку на канал: https://t.me/QE126T
-
-"
-        "После подписки нажми на кнопку ниже."
+        """Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
+Для начала проверь подписку на канал: https://t.me/QE126T""",
+        reply_markup=subscribe_markup
     )
 
-@dp.message_handler(commands=["ref"])
-async def ref(message: types.Message):
-    user_id = message.from_user.id
-    link = f"https://t.me/{(await bot.get_me()).username}?start={user_id}"
+@dp.callback_query_handler(lambda c: c.data == 'subscribed')
+async def process_subscribed(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
+    bot_info = await bot.get_me()
+    link = f"https://t.me/{bot_info.username}?start={user_id}"
     cursor.execute("SELECT COUNT(*) FROM users WHERE invited_by=?", (user_id,))
     count = cursor.fetchone()[0]
-    await message.answer(
-        f"Ваша реферальная ссылка:
+    await bot.send_message(
+        user_id,
+        f"""Ваша реферальная ссылка:
 {link}
-"
-        f"Вы пригласили: {count} человек(а)"
+Вы пригласили: {count} человек(а)"""
     )
 
 @dp.message_handler(commands=["balance"])
