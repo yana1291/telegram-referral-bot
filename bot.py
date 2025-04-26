@@ -1,4 +1,3 @@
-
 import os
 import sqlite3
 from aiogram import Bot, Dispatcher, types
@@ -6,10 +5,12 @@ from aiogram.utils import executor
 from aiogram.dispatcher.filters import CommandStart
 
 TOKEN = os.getenv("BOT_TOKEN")
+CHANNEL_USERNAME = "QE126T"
+
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
-# Создаем базу данных
+# Создание базы данных
 conn = sqlite3.connect("referral_bot.db")
 cursor = conn.cursor()
 cursor.execute("""
@@ -35,25 +36,54 @@ prizes = {
     3: {"name": "Промокод на скидку", "cost": 15, "message": "Ваш промокод: PROMO15"}
 }
 
+# Проверка подписки
+async def check_subscription(user_id):
+    member = await bot.get_chat_member(chat_id=f"@{CHANNEL_USERNAME}", user_id=user_id)
+    return member.status in ["member", "administrator", "creator"]
+
 @dp.message_handler(CommandStart(deep_link=True))
 async def start_with_ref(message: types.Message):
     ref_id = message.get_args()
     user_id = message.from_user.id
+
+    if not await check_subscription(user_id):
+        await message.answer("Сначала подпишитесь на канал: https://t.me/QE126T и затем нажмите /start снова.")
+        return
+
     cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
     if cursor.fetchone() is None:
         cursor.execute("INSERT INTO users (user_id, invited_by, balance) VALUES (?, ?, ?)", (user_id, ref_id, 0))
         cursor.execute("UPDATE users SET balance = balance + 10 WHERE user_id=?", (ref_id,))
         conn.commit()
-    await message.answer("Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!")
+
+    link = f"https://t.me/{(await bot.get_me()).username}?start={user_id}"
+    await message.answer(f"Добро пожаловать!
+
+Ваша реферальная ссылка:
+{link}
+
+Приглашайте друзей и получайте бонусы!")
 
 @dp.message_handler(commands=["start"])
 async def start(message: types.Message):
     user_id = message.from_user.id
+
+    if not await check_subscription(user_id):
+        await message.answer("Сначала подпишитесь на канал: https://t.me/QE126T и затем нажмите /start снова.")
+        return
+
     cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
     if cursor.fetchone() is None:
         cursor.execute("INSERT INTO users (user_id, balance) VALUES (?, ?)", (user_id, 0))
         conn.commit()
-    await message.answer("Добро пожаловать!")
+
+    link = f"https://t.me/{(await bot.get_me()).username}?start={user_id}"
+    await message.answer(f"Добро пожаловать!
+
+Ваша реферальная ссылка:
+{link}
+
+Приглашайте друзей и получайте бонусы!")
 
 @dp.message_handler(commands=["ref"])
 async def ref(message: types.Message):
@@ -80,7 +110,8 @@ async def shop(message: types.Message):
     for pid, prize in prizes.items():
         text += f"{pid}. {prize['name']} — {prize['cost']} бонусов
 "
-    text += "Купить: /buy <номер приза>"
+    text += "
+Купить: /buy <номер приза>"
     await message.answer(text)
 
 @dp.message_handler(commands=["buy"])
