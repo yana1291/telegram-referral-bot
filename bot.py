@@ -1,142 +1,42 @@
 
-import os
-import sqlite3
+import logging
 from aiogram import Bot, Dispatcher, types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils import executor
-from aiogram.dispatcher.filters import CommandStart
 
-TOKEN = os.getenv("BOT_TOKEN")
-bot = Bot(token=TOKEN)
+API_TOKEN = 'YOUR_BOT_API_TOKEN'
+CHANNEL_ID = '@YOUR_CHANNEL_USERNAME'
+
+logging.basicConfig(level=logging.INFO)
+
+bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 
-# Создаем базу данных
-conn = sqlite3.connect("referral_bot.db")
-cursor = conn.cursor()
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS users (
-    user_id INTEGER PRIMARY KEY,
-    invited_by INTEGER,
-    balance INTEGER DEFAULT 0
-)
-""")
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS purchases (
-    user_id INTEGER,
-    prize_id INTEGER,
-    FOREIGN KEY(user_id) REFERENCES users(user_id)
-)
-""")
-conn.commit()
+# Стартовая кнопка
+start_kb = ReplyKeyboardMarkup(resize_keyboard=True)
+start_kb.add(KeyboardButton("✅ Подписался"))
 
-prizes = {
-    1: {"name": "0,5 голды", "cost": 50, "message": "Вы приобрели 0,5 голды! Чтобы получить подарок, сделайте скриншот этого сообщения и отправьте его в канал @QE126T."},
-    2: {"name": "Приватный доступ в чат", "cost": 30, "message": "Ваша ссылка: https://t.me/joinchat/PrivChatLink"},
-    3: {"name": "Промокод на скидку", "cost": 15, "message": "Ваш промокод: PROMO15"}
-}
-
-CHANNEL_ID = -1002109090493  # <-- Укажи ID своего канала
-
-@dp.message_handler(CommandStart(deep_link=True))
-async def start_with_ref(message: types.Message):
-    ref_id = message.get_args()
-    user_id = message.from_user.id
-    cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
-    if cursor.fetchone() is None:
-        keyboard = InlineKeyboardMarkup().add(InlineKeyboardButton("✅ Подписался", callback_data="check_sub"))
-        await message.answer(
-            "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
+# Приветственное сообщение
+@dp.message_handler(commands=['start'])
+async def send_welcome(message: types.Message):
+    await message.answer(
+        "Добро пожаловать!
 "
-            "Для начала проверь подписку на канал: https://t.me/QE126T",
-            reply_markup=keyboard
-        )
-        cursor.execute("INSERT INTO users (user_id, invited_by, balance) VALUES (?, ?, ?)", (user_id, ref_id, 0))
-        conn.commit()
+        "Получи свою реферальную ссылку, приглашай друзей и получай Голду!
+"
+        "Для начала проверь подписку на канал: https://t.me/QE126T",
+        reply_markup=start_kb
+    )
+
+# Проверка подписки
+@dp.message_handler(lambda message: message.text == "✅ Подписался")
+async def check_subscription(message: types.Message):
+    member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=message.from_user.id)
+    if member.status in ['member', 'administrator', 'creator']:
+        await message.answer(f"Вы успешно подписались!
+Ваша реферальная ссылка: https://t.me/{(await bot.get_me()).username}?start={message.from_user.id}")
     else:
-        await message.answer("Вы уже зарегистрированы.")
+        await message.answer("Вы ещё не подписаны на канал!")
 
-@dp.message_handler(commands=["start"])
-async def start(message: types.Message):
-    user_id = message.from_user.id
-    cursor.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
-    if cursor.fetchone() is None:
-        keyboard = InlineKeyboardMarkup().add(InlineKeyboardButton("✅ Подписался", callback_data="check_sub"))
-        await message.answer(
-            "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
-"
-            "Для начала проверь подписку на канал: https://t.me/QE126T",
-            reply_markup=keyboard
-        )
-        cursor.execute("INSERT INTO users (user_id, balance) VALUES (?, ?)", (user_id, 0))
-        conn.commit()
-    else:
-        await message.answer("Вы уже зарегистрированы.")
-
-@dp.callback_query_handler(lambda c: c.data == "check_sub")
-async def check_sub(callback_query: types.CallbackQuery):
-    user_id = callback_query.from_user.id
-    chat_member = await bot.get_chat_member(chat_id=CHANNEL_ID, user_id=user_id)
-    if chat_member.status in ("member", "creator", "administrator"):
-        cursor.execute("SELECT invited_by FROM users WHERE user_id=?", (user_id,))
-        result = cursor.fetchone()
-        if result and result[0]:
-            invited_by = int(result[0])
-            cursor.execute("UPDATE users SET balance = balance + 10 WHERE user_id=?", (invited_by,))
-            await bot.send_message(invited_by, "Поздравляем! Новый пользователь зарегистрировался по вашей ссылке! Сделайте скриншот этого сообщения и отправьте его в канал @QE126T, чтобы получить 0,5 голды.")
-            conn.commit()
-        await bot.send_message(user_id, "Вы успешно подписались! Вот ваша реферальная ссылка: https://t.me/{0}?start={1}".format((await bot.get_me()).username, user_id))
-    else:
-        await bot.send_message(user_id, "Вы не подписаны на канал! Пожалуйста, подпишитесь и нажмите кнопку ещё раз.")
-
-@dp.message_handler(commands=["ref"])
-async def ref(message: types.Message):
-    user_id = message.from_user.id
-    link = f"https://t.me/{(await bot.get_me()).username}?start={user_id}"
-    cursor.execute("SELECT COUNT(*) FROM users WHERE invited_by=?", (user_id,))
-    count = cursor.fetchone()[0]
-    await message.answer(f"Ваша реферальная ссылка:
-{link}
-Вы пригласили: {count} человек(а)")
-
-@dp.message_handler(commands=["balance"])
-async def balance(message: types.Message):
-    user_id = message.from_user.id
-    cursor.execute("SELECT balance FROM users WHERE user_id=?", (user_id,))
-    result = cursor.fetchone()
-    balance = result[0] if result else 0
-    await message.answer(f"Ваш текущий баланс: {balance} бонусов")
-
-@dp.message_handler(commands=["shop"])
-async def shop(message: types.Message):
-    text = "Доступные призы:
-"
-    for pid, prize in prizes.items():
-        text += f"{pid}. {prize['name']} — {prize['cost']} бонусов
-"
-    text += "
-Купить: /buy <номер приза>"
-    await message.answer(text)
-
-@dp.message_handler(commands=["buy"])
-async def buy(message: types.Message):
-    user_id = message.from_user.id
-    parts = message.text.split()
-    if len(parts) != 2 or not parts[1].isdigit():
-        await message.answer("Использование: /buy <номер_приза>")
-        return
-    prize_id = int(parts[1])
-    if prize_id not in prizes:
-        await message.answer("Такого приза нет.")
-        return
-    cursor.execute("SELECT balance FROM users WHERE user_id=?", (user_id,))
-    balance = cursor.fetchone()[0]
-    if balance < prizes[prize_id]['cost']:
-        await message.answer("У вас недостаточно бонусов.")
-        return
-    cursor.execute("UPDATE users SET balance = balance - ? WHERE user_id=?", (prizes[prize_id]['cost'], user_id))
-    cursor.execute("INSERT INTO purchases (user_id, prize_id) VALUES (?, ?)", (user_id, prize_id))
-    conn.commit()
-    await message.answer(f"Поздравляем! {prizes[prize_id]['message']}")
-
-if __name__ == "__main__":
-    executor.start_polling(dp)
+if __name__ == '__main__':
+    executor.start_polling(dp, skip_updates=True)
