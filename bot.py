@@ -43,7 +43,12 @@ async def start_with_ref(message: types.Message):
         cursor.execute("INSERT INTO users (user_id, invited_by, balance) VALUES (?, ?, ?)", (user_id, ref_id, 0))
         cursor.execute("UPDATE users SET balance = balance + 10 WHERE user_id=?", (ref_id,))
         conn.commit()
-    await message.answer("Добро пожаловать! Вы использовали реферальную ссылку.")
+    await message.answer(
+        "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
+
+"
+        "Для начала проверь подписку на канал: https://t.me/QE126T"
+    )
 
 @dp.message_handler(commands=["start"])
 async def start(message: types.Message):
@@ -52,7 +57,12 @@ async def start(message: types.Message):
     if cursor.fetchone() is None:
         cursor.execute("INSERT INTO users (user_id, balance) VALUES (?, ?)", (user_id, 0))
         conn.commit()
-    await message.answer("Добро пожаловать!")
+    await message.answer(
+        "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
+
+"
+        "Для начала проверь подписку на канал: https://t.me/QE126T"
+    )
 
 @dp.message_handler(commands=["ref"])
 async def ref(message: types.Message):
