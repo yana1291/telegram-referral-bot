@@ -29,7 +29,7 @@ conn.commit()
 
 # Призы
 prizes = {
-    1: {"name": "0,5 голды", "cost": 50, "message": "Вы приобрели 0,5 голды! Чтобы получить подарок, сделайте скриншот этого сообщения и отправьте его в канал @QE126T."},
+    1: {"name": "0.5 голды", "cost": 50, "message": "Вы приобрели 0.5 голды! Чтобы получить подарок, сделайте скриншот этого сообщения и отправьте его в канал @QE126T."},
     2: {"name": "Приватный доступ в чат", "cost": 30, "message": "Ваша ссылка: https://t.me/joinchat/PrivChatLink"},
     3: {"name": "Промокод на скидку", "cost": 15, "message": "Ваш промокод: PROMO15"}
 }
@@ -43,12 +43,8 @@ async def start_with_ref(message: types.Message):
         cursor.execute("INSERT INTO users (user_id, invited_by, balance) VALUES (?, ?, ?)", (user_id, ref_id, 0))
         cursor.execute("UPDATE users SET balance = balance + 10 WHERE user_id=?", (ref_id,))
         conn.commit()
-    await message.answer(
-        "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
-
-"
-        "Для начала проверь подписку на канал: https://t.me/QE126T"
-    )
+    await message.answer("Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
+Для начала проверь подписку на канал: https://t.me/QE126T")
 
 @dp.message_handler(commands=["start"])
 async def start(message: types.Message):
@@ -57,12 +53,7 @@ async def start(message: types.Message):
     if cursor.fetchone() is None:
         cursor.execute("INSERT INTO users (user_id, balance) VALUES (?, ?)", (user_id, 0))
         conn.commit()
-    await message.answer(
-        "Добро пожаловать! Получи свою реферальную ссылку, приглашай друзей и получай Голду!
-
-"
-        "Для начала проверь подписку на канал: https://t.me/QE126T"
-    )
+    await message.answer("Добро пожаловать!")
 
 @dp.message_handler(commands=["ref"])
 async def ref(message: types.Message):
@@ -70,9 +61,7 @@ async def ref(message: types.Message):
     link = f"https://t.me/{(await bot.get_me()).username}?start={user_id}"
     cursor.execute("SELECT COUNT(*) FROM users WHERE invited_by=?", (user_id,))
     count = cursor.fetchone()[0]
-    await message.answer(f"Ваша реферальная ссылка:
-{link}
-Вы пригласили: {count} человек(а)")
+    await message.answer(f"Ваша реферальная ссылка: {link}\nВы пригласили: {count} человек(а)")
 
 @dp.message_handler(commands=["balance"])
 async def balance(message: types.Message):
@@ -84,13 +73,10 @@ async def balance(message: types.Message):
 
 @dp.message_handler(commands=["shop"])
 async def shop(message: types.Message):
-    text = "Доступные призы:
-"
+    text = "Доступные призы:\n"
     for pid, prize in prizes.items():
-        text += f"{pid}. {prize['name']} — {prize['cost']} бонусов
-"
-    text += "
-Купить: /buy <номер приза>"
+        text += f"{pid}. {prize['name']} — {prize['cost']} бонусов\n"
+    text += "\nКупить: /buy <номер приза>"
     await message.answer(text)
 
 @dp.message_handler(commands=["buy"])
